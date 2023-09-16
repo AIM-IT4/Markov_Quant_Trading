@@ -1,0 +1,191 @@
+{
+  "cells": [
+    {
+      "cell_type": "code",
+      "source": [],
+      "outputs": [],
+      "execution_count": null,
+      "metadata": {
+        "jupyter": {
+          "source_hidden": false,
+          "outputs_hidden": false
+        },
+        "noteable": {
+          "cell_type": "code"
+        }
+      },
+      "id": "bef746e9-3af7-44aa-b49f-b1e8f1ceaabf"
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "## Markov Models in Quant Trading: A Deep Dive\n",
+        "\n",
+        "Ever wondered how some of the top hedge funds, like Renaissance Technologies, leverage mathematical models for stock predictions? In this notebook, we explore the application of Markov models in quantitative trading."
+      ],
+      "metadata": {
+        "noteable": {
+          "cell_type": "markdown"
+        }
+      },
+      "id": "29de5ee0-d5b4-4c9d-a6f5-3a8db06084bf"
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### Markov Basics\n",
+        "\n",
+        "A Markov model is where the probability of transitioning to the next state depends solely on the current state. It's like forecasting tomorrow's weather based only on today!"
+      ],
+      "metadata": {
+        "noteable": {
+          "cell_type": "markdown"
+        }
+      },
+      "id": "6657fec3-3c97-4e06-b550-c88e2e89f7f2"
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "### Transition Matrix\n",
+        "\n",
+        "|       | Bullish | Bearish | Sideways |\n",
+        "|-------|---------|---------|----------|\n",
+        "|Bullish|   0.5   |   0.3   |   0.2    |\n",
+        "|Bearish|   0.4   |   0.4   |   0.2    |\n",
+        "|Sideways|  0.3   |   0.3   |   0.4    |"
+      ],
+      "metadata": {
+        "noteable": {
+          "cell_type": "markdown"
+        }
+      },
+      "id": "c0057641-91cd-461b-a0e3-107196a810e8"
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "# Define the transition matrix and states\n",
+        "matrix = np.array([[0.5, 0.3, 0.2],\n",
+        "                   [0.4, 0.4, 0.2],\n",
+        "                   [0.3, 0.3, 0.4]])\n",
+        "states = [\"Bullish\", \"Bearish\", \"Sideways\"]\n",
+        "\n",
+        "# Simulation function\n",
+        "def simulate_stock_with_signals(days, start_price, trend=\"Bullish\"):\n",
+        "    prices = [start_price]\n",
+        "    current_trend = trend\n",
+        "    buy_signals = []\n",
+        "    sell_signals = []\n",
+        "\n",
+        "    for i in range(days - 1):\n",
+        "        # Generate price based on current trend\n",
+        "        if current_trend == \"Bullish\":\n",
+        "            price_change = np.random.uniform(0.01, 0.03)\n",
+        "            prices.append(prices[-1] * (1 + price_change))\n",
+        "        elif current_trend == \"Bearish\":\n",
+        "            price_change = np.random.uniform(0.01, 0.03)\n",
+        "            prices.append(prices[-1] * (1 - price_change))\n",
+        "        else:\n",
+        "            price_change = np.random.uniform(-0.005, 0.005)\n",
+        "            prices.append(prices[-1] * (1 + price_change))\n",
+        "\n",
+        "        # Determine next trend based on the transition matrix\n",
+        "        next_trend = np.random.choice(states, p=matrix[states.index(current_trend)])\n",
+        "\n",
+        "        # Check buy/sell signals\n",
+        "        if current_trend in [\"Bearish\", \"Sideways\"] and next_trend == \"Bullish\":\n",
+        "            buy_signals.append((i+1, prices[-1]))\n",
+        "        elif current_trend == \"Bullish\" and next_trend in [\"Bearish\", \"Sideways\"]:\n",
+        "            sell_signals.append((i+1, prices[-1]))\n",
+        "\n",
+        "        current_trend = next_trend\n",
+        "\n",
+        "    return prices, buy_signals, sell_signals\n",
+        "\n",
+        "# Simulate TechCorp stock price over 100 days\n",
+        "prices, buy_signals, sell_signals = simulate_stock_with_signals(100, 100, trend=\"Bullish\")\n",
+        "\n",
+        "# Plotting the stock price with signals\n",
+        "plt.figure(figsize=(10, 5))\n",
+        "plt.plot(prices, label=\"TechCorp Stock Price\", color='blue')\n",
+        "\n",
+        "# Mark buy and sell signals\n",
+        "buy_x, buy_y = zip(*buy_signals)\n",
+        "sell_x, sell_y = zip(*sell_signals)\n",
+        "plt.scatter(buy_x, buy_y, marker=\"^\", color=\"green\", label=\"Buy Signal\", alpha=1)\n",
+        "plt.scatter(sell_x, sell_y, marker=\"v\", color=\"red\", label=\"Sell Signal\", alpha=1)\n",
+        "\n",
+        "plt.xlabel(\"Days\")\n",
+        "plt.ylabel(\"Stock Price ($)\")\n",
+        "plt.title(\"TechCorp Stock Price with Buy/Sell Signals using Markov Model\")\n",
+        "plt.legend()\n",
+        "plt.grid(True)\n",
+        "plt.show()"
+      ],
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "https://production-noteable-gate-kernel-outputs-k066hgvt.s3.amazonaws.com/notebook-kernel-12127fc02ca04bc382c5/3db56ff8-dbc9-4624-8e44-3cc7b62a8c37/c08e0956-08a0-49ca-8fe7-e14fc9627231/content/81e57fc2-d4e5-4666-a02e-206f00d37001?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=ASIA4CXUTGDVK5DW7DXT%2F20230916%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230916T113444Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=IQoJb3JpZ2luX2VjEIv%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJIMEYCIQDLXIc6bDrIVbUQhPTjj5nN6hhtZkSuefnfEVHAkSwMuAIhAKUy0ZwmU9Fjob4Lu3FRrx%2BvpKrWh94amaFMbzQ9%2FRufKvYECHQQAxoMODMwNTE1MzkyNzQ2Igzze2h5tqaJRPWs%2Fcoq0wS31heAY%2FgQyJcWA6bICNVmMZP4D6I0R%2BWicSgUXI5WS0mH7Z96Ep%2FD3NQmPGmrftq9ARlEJI8%2BU4hE7%2BAjlyAmPvUtSbZ7uME0VE7ah3YhvsoYkL8kgn%2FHB7NIrRvg%2FCls7XoGzg4sSudQstEWPPPJIzXIEhSdoipfd3zFgGZHP9WrUYMrEI9memXt4ip5KU6fe8EWve%2BF8WQl7ImmoxtXTbKZ6a4%2BzpIW51YDTwhT0ejv8lHwbaJ4pw15nVJnOljkMROHZS8j1udDodwG6TQtdFq16oHuMYkjdVMxAljjvBdYEosdI8TW9y%2Bop7PoccBLksnm9wzyK2lUPB6Alygv2uLWOXI%2B%2Bza%2F4F3KE2TQ8BirnLh63uAHx8eyrNuqyWTkPeq%2Brkt9h%2Bf%2Fotbc6m5r%2BZ836%2BbK0YPYmeeF%2Fq5F8AAs%2B5Peg%2BjbzfCjN7eZBlWFWrx5M1sBtmnEXLyL%2Fo8dWm2tz9qQjyT5eYlMufx4%2Fn8S%2FOZHebEkbXVncTKph%2B7ZE0zGKtvBqe8y2ak4xCp1WxFiGUdH90e%2FQ6HR6wExR0llx6%2BNrEfTxYpPSh%2FrzGro7H%2BbCX0BNlYozoPiD0AaNFy0aGFD9emQ2mjNX2rfYq56XNRtDs4OlNhRokhKAzooMwPl0SkF6B%2Bvfy50bUC44vxjy%2FrWO8dcY1JDdCnlN43hvMw2A1uDGFdUrtuKbZySKSswxehXDIUC%2FmTFJ2ri71tXULkBUCaC0fBROvTIR10k116YFu9%2FzpszZhR%2FMhP%2FbT79kMHlB%2BEnedWLULaO9wytMOSTlqgGOpkBKB0iNrWbqdGzEQyglOr0mMy20jxQyskzKY0VMQ3Dz4Kjag%2FrWV4Kt7q92Kv21gpTgvEmFQ9k087%2F4bM6Fc%2FCdf57azYDkP8E7hGjuHTESy1M%2Bz2qLhhZNssDuCrPcZi4ZvNN%2FxrgZssPksVmP1TuTSF%2Bw9XM9BZcg5yLt0qABOhTz7czn%2FqoUMw0m51zf5sbSiMOgfk0RbDv&X-Amz-Signature=26eece1f964f7e39107b52de7a74fa94fa737699cc9e9c41b95daa562856e986"
+          },
+          "metadata": {}
+        }
+      ],
+      "execution_count": null,
+      "metadata": {
+        "noteable": {
+          "cell_type": "code"
+        },
+        "ExecuteTime": {
+          "start_time": "2023-09-16T11:34:43.974844+00:00",
+          "end_time": "2023-09-16T11:34:44.657478+00:00"
+        }
+      },
+      "id": "3db56ff8-dbc9-4624-8e44-3cc7b62a8c37"
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Renaissance Technologies, a behemoth in the world of quantitative trading, is rumored to employ Markov models among its diverse range of algorithms. This emphasizes the profound potential and significance of such models in the financial domain.\n",
+        "\n",
+        "While this notebook provides a basic showcase, it offers a glimpse into the vast possibilities with Markov models. In real-world scenarios, traders combine a myriad of models and data points to make informed decisions."
+      ],
+      "metadata": {
+        "noteable": {
+          "cell_type": "markdown"
+        }
+      },
+      "id": "63c84ee0-1482-4de2-96c8-d32df5c41ad2"
+    }
+  ],
+  "metadata": {
+    "noteable-chatgpt": {
+      "create_notebook": {
+        "openai_conversation_id": "0137bb6b-041f-5c18-a6b4-c4b10537ce0f",
+        "openai_ephemeral_user_id": "da5149fa-2fc0-5773-808a-d292084f0d3c",
+        "openai_subdivision1_iso_code": "IN-MH"
+      }
+    },
+    "kernel_info": {
+      "name": "python3"
+    },
+    "noteable": {
+      "last_delta_id": "a47efd09-3574-454c-a263-a1274d32db4f"
+    },
+    "kernelspec": {
+      "display_name": "Python 3.9",
+      "language": "python",
+      "name": "python3"
+    },
+    "selected_hardware_size": "small",
+    "nteract": {
+      "version": "noteable@2.9.0"
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 5
+}
